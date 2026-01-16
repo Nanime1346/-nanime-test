@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NAnime - Test</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .media-item { background: #111; border: 1px solid #333; padding: 1rem; margin: 0.5rem 0; border-radius: 0.5rem; }
+    .media-item img { width: 80px; height: 112px; object-fit: cover; border-radius: 0.25rem; }
+  </style>
+</head>
+<body class="bg-black text-white min-h-screen p-4">
+  <h1 class="text-3xl font-bold mb-4">NAnime - Test</h1>
+  <div id="anime-list">
+    <p>Loading anime...</p>
+  </div>
+
+  <script>
+    async function loadAnime() {
+      const query = `
+        query {
+          Page(page: 1, perPage: 10) {
+            media(type: ANIME, sort: POPULARITY_DESC) {
+              id
+              title { romaji }
+              coverImage { large }
+            }
+          }
+        }
+      `;
+
+      try {
+        const response = await fetch('https://graphql.anilist.co', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        const animeList = data.data.Page.media || [];
+
+        document.getElementById('anime-list').innerHTML = animeList.map(item => `
+          <div class="media-item flex items-start gap-4">
+            <img src="${item.coverImage.large}" alt="${item.title.romaji}">
+            <div>
+              <div class="font-bold">${item.title.romaji}</div>
+            </div>
+          </div>
+        `).join('');
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('anime-list').innerHTML = `
+          <p class="text-red-400">❌ Failed to load anime.</p>
+          <p class="text-yellow-400">✅ Make sure you're on your Vercel site (not local file).</p>
+          <p class="text-gray-400">Open DevTools (F12) → Console for details.</p>
+        `;
+      }
+    }
+
+    // Load on page load
+    loadAnime();
+  </script>
+</body>
+</html>
